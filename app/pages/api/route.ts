@@ -8,25 +8,66 @@ const sql = neon(process.env.DATABASE_URL!);
 
 let isSeeded = false;
 
+export async function POST(request: Request) {
+  try {
+    const placeholderData = "10/11/22";
+    const placeholderTicket = "164489164489";
+
+    const result = await sql`
+      INSERT INTO chamados (data, ticket) 
+      VALUES (${placeholderData}, ${placeholderTicket})
+      RETURNING *
+    `;
+
+    return NextResponse.json({ chamado: result[0] }, { status: 201 });
+  } catch (error) {
+    console.error("POST error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function GET() {
   try {
-    const chamadosCount = await sql("SELECT COUNT(*) FROM chamados");
-    if (Number(chamadosCount[0].count) === 0) await seedChamados();
+    const chamados = await sql`
+SELECT EXISTS (
+SELECT 1
+FROM information_schema.tables
+WHERE table_name = 'chamados'
+) AS table_existence;
+`;
 
-    const chamados = await sql("SELECT * FROM chamados");
     return NextResponse.json({ chamados }, { status: 200 });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      {
-        message: "Internal server error",
-      },
-      {
-        status: 500,
-      }
+      { error: "Internal server error" },
+      { status: 500 }
     );
   }
 }
+
+// export async function GET() {
+//   try {
+//     const chamadosCount = await sql("SELECT COUNT(*) FROM chamados");
+//     if (Number(chamadosCount[0].count) === 0) await seedChamados();
+
+//     const chamados = await sql("SELECT * FROM chamados");
+//     return NextResponse.json({ chamados }, { status: 200 });
+//   } catch (error) {
+//     console.error(error);
+//     return NextResponse.json(
+//       {
+//         message: "Internal server error",
+//       },
+//       {
+//         status: 500,
+//       }
+//     );
+//   }
+// }
 
 const seedChamados = async () => {
   if (isSeeded) return { message: "Database already seeded", chamados: [] };
