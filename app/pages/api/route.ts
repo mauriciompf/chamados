@@ -4,28 +4,23 @@ import { neon } from "@neondatabase/serverless";
 import { NextResponse } from "next/server";
 
 const sql = neon(process.env.DATABASE_URL!);
-
-async function testConnection() {
-  try {
-    const result = await sql`SELECT 1`;
-    console.log("Database connection test:", result);
-  } catch (err) {
-    console.error("Database connection failed:", err);
-  }
-}
-
-// Call it when the server starts
-testConnection();
-
 // let isSeeded = false;
 
 export async function GET() {
   try {
-    const data = { message: "ok" };
-    return NextResponse.json(data, { status: 201 });
+    const result = await sql("SELECT * FROM chamados");
+    // const count = result[0]?.count || 0;
+
+    const body = { message: "ok" };
+
+    return NextResponse.json({ result }, { status: 200 });
   } catch (error) {
-    console.error(error);
-    NextResponse.json({ message: `error: ${error}` }, { status: 500 });
+    console.error("Database error:", error);
+    // Make sure to RETURN the error response
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -37,11 +32,9 @@ export async function POST(request: Request) {
 
     const { ticket, date } = formData;
 
-    const result = await sql`
-      INSERT INTO chamados (ticket, data)
-      VALUES (${ticket}, ${date})
-      RETURNING *
-    `;
+    const result = await sql(
+      "INSERT INTO chamados (ticket, data) VALUES (${ticket}, ${date}) RETURNING *"
+    );
 
     return NextResponse.json(
       {
