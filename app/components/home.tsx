@@ -1,14 +1,17 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { create } from "./create";
 import axios from "axios";
-import { useQuery } from "react-query";
+import { useQuery, useQueryClient } from "react-query";
 
 function Home() {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [ticket, setTicket] = useState<string | number>();
-  const [selectDate, setSelectDate] = useState<string | number>("24/06/2025");
+  const [ticket, setTicket] = useState("");
+  const [selectDate, setSelectDate] = useState("24/06/2025");
+  const [codigo, setCodigo] = useState("");
+  const [status, setStatus] = useState("ativa");
+  const [tipo, setTipo] = useState("padrao");
 
   const handleTicketModal = () => {
     setIsTicketModalOpen(true);
@@ -23,6 +26,38 @@ function Home() {
   const handleDate = (e: ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectDate(value);
+  };
+
+  const queryClient = useQueryClient();
+
+  console.log(selectDate);
+
+  const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+
+        formData.append("ticket", ticket);
+    formData.append("date", selectDate);
+    formData.append("codigo", codigo);
+    formData.append("status", status);
+    formData.append("tipo", tipo);
+
+
+    try {
+      await create(formData);
+
+      await queryClient.invalidateQueries("tickets");
+
+      setTicket("0");
+      setSelectDate("2025-06-24");
+      setCodigo("");
+      setStatus("ativa");
+      setTipo("padrao");
+      setIsTicketModalOpen(false);
+    } catch (error) {
+      console.error("Error submitting form", error);
+    }
   };
 
   const fetchTickets = async () => {
@@ -41,13 +76,15 @@ function Home() {
     return <div>Error! {(error as Error).message}</div>;
   }
 
+  // console.log(new Date(data.result[0].data).toLocaleDateString());
+
   return (
     <main>
       <div className="grid place-items-center">
         {/* MODAL */}
         {isTicketModalOpen && (
           <form
-            // onSubmit={handleOnSubmit}
+            onSubmit={handleOnSubmit}
             action={create}
             className="pt-10 grid gap-y-1 w-[600px] h-[400px] bg-amber-50 text-black rounded-xl p-4 absolute -translate-y-[50%] top-[50%]"
           >
@@ -78,8 +115,8 @@ function Home() {
                   id="date"
                 >
                   <option value="2025-06-26">Hoje</option>
-                  <option value="">Amanhã</option>
-                  <option value="">Escolher Data</option>
+                  <option value="2025-06-27">Amanhã</option>
+                  <option value="2025-06-27">Escolher Data</option>
                 </select>
               </div>
             </div>
@@ -184,7 +221,9 @@ function Home() {
             {data.result.map((ticket: any) => (
               <tr className="text-center" key={ticket.id}>
                 <td className="border p-2">{ticket.id}</td>
-                <td className="border p-2">{ticket.data}</td>
+                <td className="border p-2">
+                  {new Date(ticket.data).toLocaleDateString()}
+                </td>
                 <td className="border p-2">{ticket.semana}</td>
                 <td className="border p-2">{ticket.ticket}</td>
                 <td className="border p-2">{ticket.codigo}</td>
