@@ -2,6 +2,8 @@
 
 import { ChangeEvent, useState } from "react";
 import { create } from "./create";
+import axios from "axios";
+import { useQuery } from "react-query";
 
 function Home() {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
@@ -23,20 +25,26 @@ function Home() {
     setSelectDate(value);
   };
 
-  // const create = async (formData: FormData) => {
-  //   "use server";
-  //   const sql = neon(`${process.env.DATABASE_URL}`);
-  //   const ticket = formData.get("ticket");
-  //   const date = formData.get("date");
+  const fetchTickets = async () => {
+    const { data } = await axios.get("http://localhost:3000/pages/api");
 
-  //   await sql("INSERT INTO chamados VALUES ($1, $2)", [ticket, date]);
-  // };
+    return data;
+  };
+
+  const { data, error, isError, isLoading } = useQuery("tickets", fetchTickets);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    return <div>Error! {(error as Error).message}</div>;
+  }
 
   return (
     <main>
       <div className="grid place-items-center">
         {/* MODAL */}
-
         {isTicketModalOpen && (
           <form
             // onSubmit={handleOnSubmit}
@@ -93,10 +101,10 @@ function Home() {
                 <p className="mr-4">
                   <strong>Tipo</strong>:
                 </p>
-                <select className="border " name="" id="">
-                  <option value="">Padrão</option>
-                  <option value="">Plano de Aula</option>
-                  <option value="">Pós Graduação</option>
+                <select className="border" name="tipo" id="">
+                  <option value="padrao">Padrão</option>
+                  <option value="plano_de_aula">Plano de Aula</option>
+                  <option value="pos">Pós Graduação</option>
                 </select>
               </div>
             </div>
@@ -106,19 +114,19 @@ function Home() {
                 <label htmlFor="" className="mr-2">
                   <strong>Código</strong>:
                 </label>
-                <input className="border-b" type="text" />
+                <input name="codigo" className="border-b" type="text" />
               </div>
 
               <div className="flex items-center">
                 <p className="mr-4">
                   <strong>STATUS</strong>:
                 </p>
-                <select className="border " name="" id="">
-                  <option value="">Ativa</option>
-                  <option value="">Aprovada</option>
-                  <option value="">Desenvolvimento</option>
-                  <option value="">Pendente</option>
-                  <option value="">Salvo Local</option>
+                <select className="border " name="status" id="">
+                  <option value="ativa">Ativa</option>
+                  <option value="aprovada">Aprovada</option>
+                  <option value="desenvolvimento">Desenvolvimento</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="salvo_local">Salvo Local</option>
                 </select>
               </div>
             </div>
@@ -146,11 +154,9 @@ function Home() {
             </button>
           </form>
         )}
-
         <h3 className="text-3xl font-bold text-center mt-14">
           Tabela de Socilitações de Chamados de Alterações
         </h3>
-
         <button
           type="button"
           onClick={handleTicketModal}
@@ -158,7 +164,6 @@ function Home() {
         >
           Adicionar nova solicitação
         </button>
-
         <table className="mt-12">
           <thead>
             <tr>
@@ -170,9 +175,35 @@ function Home() {
               <th className="border px-10 py-2">STATUS</th>
               <th className="border px-6 py-2">TIPO</th>
               <th className="border px-12 py-2">LINK</th>
+              <th className="border px-12 py-2" colSpan={2}>
+                CONFIG.
+              </th>
             </tr>
           </thead>
-          <tbody></tbody>
+          <tbody>
+            {data.result.map((ticket: any) => (
+              <tr className="text-center" key={ticket.id}>
+                <td className="border p-2">{ticket.id}</td>
+                <td className="border p-2">{ticket.data}</td>
+                <td className="border p-2">{ticket.semana}</td>
+                <td className="border p-2">{ticket.ticket}</td>
+                <td className="border p-2">{ticket.codigo}</td>
+                <td className="border p-2">{ticket.status}</td>
+                <td className="border p-2">{ticket.tipo}</td>
+                <td className="border p-2">{ticket.link}</td>
+                <td className="border p-2 bg-blue-500 cursor-pointer">
+                  <button type="button" className="cursor-pointer">
+                    editar
+                  </button>
+                </td>
+                <td className="border p-2 bg-red-400 cursor-pointer">
+                  <button type="button" className="cursor-pointer">
+                    deletar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     </main>
