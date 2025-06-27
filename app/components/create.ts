@@ -18,9 +18,13 @@ function getWeekdayOfMonth(date: Date) {
   return Math.ceil(dayOfMonth / 7);
 }
 
-export const create = async (formData: FormData) => {
-  const sql = neon(`${process.env.DATABASE_URL}`);
+const sql = neon(`${process.env.DATABASE_URL}`);
 
+export const deleteTicket = async (id: number) => {
+  await sql`DELETE FROM chamados WHERE id = ${id}`;
+};
+
+export const create = async (formData: FormData) => {
   const rawData = {
     id: formData.get("id") ? Number(formData.get("id")) : undefined,
     ticket: formData.get("ticket"),

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import { create } from "./create";
+import { create, deleteTicket } from "./create";
 import axios from "axios";
 import { useQuery, useQueryClient } from "react-query";
 
@@ -10,9 +10,11 @@ function Home() {
   const [ticket, setTicket] = useState("");
   const [selectDate, setSelectDate] = useState("24/06/2025");
   const [codigo, setCodigo] = useState("");
-  const [status, setStatus] = useState("ativa");
+  const [status, setStatus] = useState("desenvolvimento");
   const [tipo, setTipo] = useState("padrao");
   const [editingTicket, setEditingTicket] = useState<any>(null);
+
+  const queryClient = useQueryClient();
 
   const handleEditTicket = (ticket: any) => {
     setEditingTicket(ticket);
@@ -22,6 +24,17 @@ function Home() {
     setStatus(ticket.status);
     setTipo(ticket.tipo);
     setIsTicketModalOpen(true);
+  };
+
+  const handleDeleteTicket = async (id: number) => {
+    if (confirm("Tem certeza que deseja deletar este ticket?")) {
+      try {
+        await deleteTicket(id);
+        await queryClient.invalidateQueries("tickets");
+      } catch (error) {
+        console.error("Error deleting ticket", error);
+      }
+    }
   };
 
   const handleTicketModal = () => {
@@ -38,8 +51,6 @@ function Home() {
     const value = e.target.value;
     setSelectDate(value);
   };
-
-  const queryClient = useQueryClient();
 
   const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -104,8 +115,8 @@ function Home() {
             <button
               onClick={() => {
                 setIsTicketModalOpen(false);
-                handleEditTicket(null);
               }}
+              type="button"
               className="cursor-pointer absolute top-2 right-2 bg-red-400 font-bold pt-1 rounded-full w-fit grid place-items-center px-2"
             >
               fechar
@@ -256,7 +267,11 @@ function Home() {
                   </button>
                 </td>
                 <td className="border p-2 bg-red-400 cursor-pointer">
-                  <button type="button" className="cursor-pointer">
+                  <button
+                    onClick={() => handleDeleteTicket(ticket.id)}
+                    type="button"
+                    className="cursor-pointer"
+                  >
                     deletar
                   </button>
                 </td>
