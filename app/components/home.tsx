@@ -12,6 +12,17 @@ function Home() {
   const [codigo, setCodigo] = useState("");
   const [status, setStatus] = useState("ativa");
   const [tipo, setTipo] = useState("padrao");
+  const [editingTicket, setEditingTicket] = useState<any>(null);
+
+  const handleEditTicket = (ticket: any) => {
+    setEditingTicket(ticket);
+    setTicket(ticket.ticket);
+    setSelectDate(ticket.data);
+    setCodigo(ticket.codigo);
+    setStatus(ticket.status);
+    setTipo(ticket.tipo);
+    setIsTicketModalOpen(true);
+  };
 
   const handleTicketModal = () => {
     setIsTicketModalOpen(true);
@@ -30,30 +41,31 @@ function Home() {
 
   const queryClient = useQueryClient();
 
-  console.log(selectDate);
-
   const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
 
-        formData.append("ticket", ticket);
+    formData.append("ticket", ticket);
     formData.append("date", selectDate);
     formData.append("codigo", codigo);
     formData.append("status", status);
     formData.append("tipo", tipo);
 
+    if (editingTicket) {
+      formData.append("id", editingTicket.id.toString());
+    }
 
     try {
       await create(formData);
-
       await queryClient.invalidateQueries("tickets");
 
-      setTicket("0");
+      setTicket("");
       setSelectDate("2025-06-24");
       setCodigo("");
       setStatus("ativa");
       setTipo("padrao");
+      setEditingTicket(null);
       setIsTicketModalOpen(false);
     } catch (error) {
       console.error("Error submitting form", error);
@@ -76,8 +88,6 @@ function Home() {
     return <div>Error! {(error as Error).message}</div>;
   }
 
-  // console.log(new Date(data.result[0].data).toLocaleDateString());
-
   return (
     <main>
       <div className="grid place-items-center">
@@ -88,8 +98,14 @@ function Home() {
             action={create}
             className="pt-10 grid gap-y-1 w-[600px] h-[400px] bg-amber-50 text-black rounded-xl p-4 absolute -translate-y-[50%] top-[50%]"
           >
+            {editingTicket && (
+              <input type="hidden" name="id" value={editingTicket.id} />
+            )}
             <button
-              onClick={() => setIsTicketModalOpen(false)}
+              onClick={() => {
+                setIsTicketModalOpen(false);
+                handleEditTicket(null);
+              }}
               className="cursor-pointer absolute top-2 right-2 bg-red-400 font-bold pt-1 rounded-full w-fit grid place-items-center px-2"
             >
               fechar
@@ -231,7 +247,11 @@ function Home() {
                 <td className="border p-2">{ticket.tipo}</td>
                 <td className="border p-2">{ticket.link}</td>
                 <td className="border p-2 bg-blue-500 cursor-pointer">
-                  <button type="button" className="cursor-pointer">
+                  <button
+                    onClick={() => handleEditTicket(ticket)}
+                    type="button"
+                    className="cursor-pointer"
+                  >
                     editar
                   </button>
                 </td>
