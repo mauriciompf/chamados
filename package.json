@@ -14,6 +14,7 @@
     "neon": "^2.0.0",
     "next": "15.3.3",
     "react": "^19.0.0",
+    "react-calendar": "^6.0.0",
     "react-dom": "^19.0.0",
     "react-query": "^3.39.3",
     "zod": "^3.25.67"

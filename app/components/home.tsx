@@ -1,30 +1,38 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, SetStateAction, useState } from "react";
 import { create, deleteTicket } from "./create";
 import axios from "axios";
 import { useQuery, useQueryClient } from "react-query";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 function Home() {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [ticket, setTicket] = useState("");
-  const [selectDate, setSelectDate] = useState("24/06/2025");
+  const [selectDate, setSelectDate] = useState<Date>(new Date());
   const [codigo, setCodigo] = useState("");
   const [status, setStatus] = useState("desenvolvimento");
   const [tipo, setTipo] = useState("padrao");
   const [editingTicket, setEditingTicket] = useState<any>(null);
+  const [calendarModal, setCalendarModal] = useState<boolean>(false);
 
   const queryClient = useQueryClient();
+
+  // console.log(selectDate);
+
+  const formattedDate = selectDate.toISOString().split("T")[0];
 
   const handleEditTicket = (ticket: any) => {
     setEditingTicket(ticket);
     setTicket(ticket.ticket);
-    setSelectDate(ticket.data);
+    setSelectDate(ticket.data ? new Date(ticket.data) : new Date());
     setCodigo(ticket.codigo);
     setStatus(ticket.status);
     setTipo(ticket.tipo);
     setIsTicketModalOpen(true);
   };
+  // console.log(selectDate);
 
   const handleDeleteTicket = async (id: number) => {
     if (confirm("Tem certeza que deseja deletar este ticket?")) {
@@ -47,10 +55,10 @@ function Home() {
     setTicket(value);
   };
 
-  const handleDate = (e: ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    setSelectDate(value);
-  };
+  // const handleDate = (e: ChangeEvent<HTMLSelectElement>) => {
+  //   const value = e.target.value;
+  //   setSelectDate(value);
+  // };
 
   const handleOnSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -58,7 +66,7 @@ function Home() {
     const formData = new FormData(e.currentTarget);
 
     formData.append("ticket", ticket);
-    formData.append("date", selectDate);
+    formData.append("date", formattedDate);
     formData.append("codigo", codigo);
     formData.append("status", status);
     formData.append("tipo", tipo);
@@ -72,7 +80,7 @@ function Home() {
       await queryClient.invalidateQueries("tickets");
 
       setTicket("");
-      setSelectDate("2025-06-24");
+      setSelectDate(new Date());
       setCodigo("");
       setStatus("ativa");
       setTipo("padrao");
@@ -123,18 +131,33 @@ function Home() {
             </button>
 
             <div className="flex justify-between items-center">
-              <p>
-                <strong>ID</strong>:{" "}
-                <span className="text-sm bg-gray-500 text-white p-1 rounded-2xl ">
-                  0001
-                </span>
-              </p>
-
               <div className="flex items-center">
                 <p className="mr-4">
                   <strong>Data</strong>:
                 </p>
-                <select
+
+                <button
+                  type="button"
+                  onClick={() => setCalendarModal(!calendarModal)}
+                  className="cursor-pointer font-bold bg-gray-500 text-white p-2 rounded-2xl"
+                >
+                  {selectDate
+                    ? selectDate.toLocaleDateString()
+                    : "Escolher Data"}
+                </button>
+
+                {calendarModal && (
+                  <Calendar
+                    className={"absolute bottom-70 left-50"}
+                    onChange={(date) => {
+                      setSelectDate(date as Date);
+                      setCalendarModal(false);
+                    }}
+                    value={selectDate}
+                  />
+                )}
+
+                {/* <select
                   onChange={handleDate}
                   value={selectDate}
                   className="border"
@@ -144,7 +167,7 @@ function Home() {
                   <option value="2025-06-26">Hoje</option>
                   <option value="2025-06-27">Amanhã</option>
                   <option value="2025-06-27">Escolher Data</option>
-                </select>
+                </select> */}
               </div>
             </div>
             <div className="flex items-center justify-between">
@@ -194,7 +217,7 @@ function Home() {
                 </select>
               </div>
             </div>
-
+            {/* 
             <div className="flex gap-4 mt-4">
               <p>
                 <strong>LINK</strong>:{" "}
@@ -211,7 +234,7 @@ function Home() {
               <div className="bg-blue-500 h-fit text-white px-2 rounded-xl text-sm cursor-pointer">
                 Editar link
               </div>
-            </div>
+            </div> */}
 
             <button className="cursor-pointer bg-gray-500 text-white rounded-2xl font-bold text-xl">
               Adicionar
